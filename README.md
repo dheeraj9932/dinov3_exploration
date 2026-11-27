@@ -2,7 +2,7 @@
 
 A hands-on lab for learning how **DINOv3** (`ViT-S/16`, `hidden_size=384`) works from the inside out — set up from scratch with `uv` + Hugging Face `transformers`, running on a local RTX 3050 (4 GB) GPU.
 
-> Learning companion: `JOURNEY.md` tracks the full iteration log (mental models, exercises, and the next queued topic: the 3-channel PCA rainbow map).
+> Learning companion: `JOURNEY.md` tracks the full iteration log (mental models, roadblocks solved, and next zoom options).
 
 ## What DINOv3 is (80/20 mental model)
 
@@ -25,26 +25,39 @@ uv pip install torch transformers pillow matplotlib
 
 ## Scripts
 
-### `run_random.py` — first forward pass
+### 1. `run_random.py` — First Forward Pass
 Feeds a random tensor `(1, 3, 224, 224)` through the model and prints the output shape `(1, 201, 384)`, confirming the `1 + 4 + 196 = 201` token anatomy.
 
 ```bash
 .venv/bin/python run_random.py
 ```
 
-### `compare_real_vs_noise.py` — cosine similarity heatmaps
+### 2. `compare_real_vs_noise.py` — Cosine Similarity Heatmaps
 Runs DINOv3 on the COCO two-cats photo and on random noise, computes cosine similarity of every patch tile against anchor tile `(7, 7)`, and saves a 3-panel comparison to `similarity_comparison.png`.
 
 ```bash
 .venv/bin/python compare_real_vs_noise.py
 ```
 
-Findings visible in `similarity_comparison.png`:
-- On the real photo, the anchor tile (on the pink couch between the cats) lights up the whole couch while carving out both cats' silhouettes — zero-shot object grouping.
-- On random noise, similarity forms a radial bullseye around the anchor — the signature of DINOv3's 2D RoPE position encoding when visual content carries no semantic signal.
+### 3. `pca_rainbow.py` — 3-Component PCA Rainbow Map
+Projects all 196 patch embeddings (`[196, 384]`) onto their top 3 principal components (`[196, 3]`), normalizes each component to `[0, 1]`, and plots `PC1`, `PC2`, `PC3`, and the combined `[14, 14, 3]` RGB rainbow image in `pca_rainbow.png`.
 
-## Status / next up
+```bash
+.venv/bin/python pca_rainbow.py
+```
+
+### 4. `cross_image_correspondence.py` — Whole-Image Retrieval & Cross-Image Part Tracking
+Demonstrates the two core DINOv3 output plugs across 3 different photos (Indoor Cats, Snowy Cat, Grizzly Bear):
+- **Plug A (`cls_token` `[3, 384]`):** Computes the `3×3` whole-image retrieval similarity matrix.
+- **Plug B (`patch_tokens` `[14, 14, 384]`):** Takes anchor tile `(2, 4)` (the indoor cat's left ear) and searches all 196 tiles of the snowy cat photo, automatically matching tile `(3, 4)` on the snowy cat's left ear (`cross_image_correspondence.png`).
+
+```bash
+.venv/bin/python cross_image_correspondence.py
+```
+
+## Status
 
 - [x] Iteration 1: Setup from scratch + first run on random input
 - [x] Iteration 2: `AutoImageProcessor` + patch cosine similarity (real image vs. noise)
-- [ ] Iteration 3: 3-channel PCA rainbow map (visualizing all 196 tiles at once)
+- [x] Iteration 3: 3-channel PCA rainbow map (visualizing all 196 tiles at once)
+- [x] Iteration 4: Computer Vision tasks unlocked by DINOv3 (`cls_token` retrieval + `patch_tokens` cross-image part tracking)
